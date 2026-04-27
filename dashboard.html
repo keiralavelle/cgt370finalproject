@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Georgia, serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      height: 100vh;
+    }
+
+    .filters {
+      background: #e6eef8;
+      padding:70px 20px 20px;
+      border-right: 1px solid #ccc;
+    }
+
+    .filters h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .filter-box {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+    }
+
+    .viz-area {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .viz {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: #6b7280;
+    }
+
+    .back-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        padding: 8px 14px;
+        background: #6d8db3;
+        color: white;
+        text-decoration: none;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        z-index: 1000;
+    }
+
+    .back-btn:hover {
+        background: #56779d;
+    }
+
+  </style>
+</head>
+
+<body>
+    <a class="back-btn" href="index.html">Back</a>
+        <div class="dashboard">
+
+        <div class="filters">
+        <h2>Filters</h2>
+
+        <div class="filter-box">Country</div>
+        <div class="filter-box">Region</div>
+        <div class="filter-box">Income Group</div>
+        <div class="filter-box">Policy Exists</div>
+        <div class="filter-box">Year</div>
+        </div>
+
+        <div class="viz-area">
+        </div>
+
+    </div>
+
+</body>
+</html>
