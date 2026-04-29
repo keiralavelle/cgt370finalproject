@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Dashboard</title>
 
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -14,7 +15,7 @@
 
     .dashboard {
       display: grid;
-      grid-template-columns: 220px 1fr;
+      grid-template-rows: auto 1fr;
       height: 100vh;
     }
 
@@ -22,6 +23,9 @@
       background: #e6eef8;
       padding:70px 20px 20px;
       border-right: 1px solid #ccc;
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     .filters h2 {
@@ -30,18 +34,15 @@
     }
 
     .filter-box {
-      margin-bottom: 15px;
-      padding: 10px;
+      padding: 8px 12px;
       background: white;
       border-radius: 8px;
+      font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     .viz-area {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-      gap: 15px;
+      padding: 20px 250px;
     }
 
     .viz {
@@ -90,9 +91,128 @@
         </div>
 
         <div class="viz-area">
+          <div id="chart" class="viz"></div>
         </div>
 
     </div>
+    <div class="tooltip"></div>
 
+<script>
+const container = d3.select("#chart");
+const tooltip = d3.select(".tooltip");
+
+const margin = {top: 40, right: 150, bottom: 60, left: 70};
+const width = 900 - margin.left - margin.right;
+const height = 600 - margin.top - margin.bottom;
+
+const svg = container.append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom);
+
+svg.append("text")
+  .attr("x", (width + margin.left + margin.right) / 2)
+  .attr("y", 25)
+  .attr("text-anchor", "middle")
+  .style("font-size", "16px")
+  .style("font-weight", "bold")
+  .text("Does daily social media usage affect the mental health crisis index across regions?");
+
+const g = svg.append("g")
+  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+const color = d3.scaleOrdinal()
+  .domain(["Africa", "Americas", "E. Med", "Europe", "S-E Asia", "W Pacific"])
+  .range(["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#a65628"]);
+
+d3.csv("Global_Mental_Health_Crisis_Index_2026.csv").then(data => {
+
+  data.forEach(d => {
+    d.social_media_hours_daily = +d.social_media_hours_daily;
+    d.mh_crisis_index = +d.mh_crisis_index;
+  });
+
+  const x = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.social_media_hours_daily))
+    .range([0, width]);
+
+  svg.append("text")
+  .attr("x", (width + margin.left + margin.right) / 2)
+  .attr("y", height + margin.top + 50)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .text("Daily Social Media Usage (Hours)");
+
+  const y = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.mh_crisis_index))
+    .range([height, 0]);
+  
+  svg.append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -(height / 2) - margin.top)
+  .attr("y", 15)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .text("Mental Health Crisis Index");
+
+  g.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x));
+
+  g.append("g")
+    .call(d3.axisLeft(y));
+
+  g.selectAll("circle")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("cx", d => x(d.social_media_hours_daily))
+    .attr("cy", d => y(d.mh_crisis_index))
+    .attr("r", 5)
+    .attr("fill", d => color(d.region))
+    .attr("opacity", 0.8)
+
+    .on("mouseover", (event, d) => {
+      tooltip.style("opacity", 1)
+        .html(`
+          <b>${d.country}</b><br/>
+          Region: ${d.region}<br/>
+          Social Media: ${d.social_media_hours_daily} hrs<br/>
+          Crisis Index: ${d.mh_crisis_index}
+        `);
+    })
+
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY + 10) + "px");
+    })
+
+    .on("mouseout", () => tooltip.style("opacity", 0));
+
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width + 120}, 50)`);
+
+  const regions = color.domain();
+
+  legend.selectAll("rect")
+    .data(regions)
+    .enter()
+    .append("rect")
+    .attr("y", (d,i) => i * 25)
+    .attr("width", 12)
+    .attr("height", 12)
+    .attr("fill", d => color(d));
+
+  legend.selectAll("text")
+    .data(regions)
+    .enter()
+    .append("text")
+    .attr("x", 20)
+    .attr("y", (d,i) => i * 25 + 10)
+    .text(d => d)
+    .style("font-size", "12px");
+
+});
+</script>
 </body>
 </html>
