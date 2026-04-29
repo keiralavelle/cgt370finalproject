@@ -92,6 +92,7 @@
 
         <div class="viz-area">
           <div id="chart" class="viz"></div>
+          <div id="bubbleChart" class="viz" style="margin-top:20px;"></div>
         </div>
 
     </div>
@@ -214,5 +215,148 @@ d3.csv("Global_Mental_Health_Crisis_Index_2026.csv").then(data => {
 
 });
 </script>
+
+<script>
+    const bubbleContainer = d3.select("#bubbleChart");
+    
+    const margin2 = { top: 40, right: 80, bottom: 80, left: 90 };
+    const width2 = 900 - margin2.left - margin2.right;
+    const height2 = 520 - margin2.top - margin2.bottom;
+    
+    const svg2 = bubbleContainer.append("svg")
+      .attr("width", width2 + margin2.left + margin2.right)
+      .attr("height", height2 + margin2.top + margin2.bottom);
+    
+    svg2.append("text")
+      .attr("x", (width2 + margin2.left + margin2.right) / 2)
+      .attr("y", 28)
+      .attr("text-anchor", "middle")
+      .style("font-size", "18px")
+      .style("font-weight", "bold")
+      .text("Does internet penetration percentage affect youth mental health crisis scores?");
+    
+    const g2 = svg2.append("g")
+      .attr("transform", `translate(${margin2.left},${margin2.top})`);
+      
+svg2.append("text")
+  .attr("x", (width2 + margin2.left + margin2.right) / 2)
+  .attr("y", height2 + margin2.top + 65)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-family", "Georgia, serif")
+  .text("Internet Penetration Percentage (%)");
+
+  svg2.append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -(height2 / 2) - margin2.top)
+  .attr("y", 25)  
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-family", "Georgia, serif")
+  .text("youth mental health crisis score");
+    
+    d3.csv("Global_Mental_Health_Crisis_Index_2026.csv").then(data => {
+    
+      data.forEach(d => {
+        d.internet_penetration_pct = +d.internet_penetration_pct;
+        d.youth_mh_crisis_score = +d.youth_mh_crisis_score;
+        d.population_millions = +d.population_millions;
+      });
+    
+      const bins = [
+        { label: "0-20%", min: 0, max: 20 },
+        { label: "20-40%", min: 20, max: 40 },
+        { label: "40-60%", min: 40, max: 60 },
+        { label: "60-80%", min: 60, max: 80 },
+        { label: "80-100%", min: 80, max: 100 }
+      ];
+    
+      data.forEach(d => {
+        const bin = bins.find(b =>
+          d.internet_penetration_pct >= b.min &&
+          d.internet_penetration_pct < b.max
+        );
+        d.internet_bin = bin ? bin.label : "80-100%";
+      });
+    
+      const grouped = Array.from(
+        d3.rollup(
+          data,
+          values => ({
+            internet_bin: values[0].internet_bin,
+            avg_score: d3.mean(values, d => d.youth_mh_crisis_score),
+            population: d3.sum(values, d => d.population_millions)
+          }),
+          d => d.internet_bin
+        ),
+        ([key, value]) => value
+      );
+      const key = svg2.append("g")
+  .attr("transform", `translate(${width2 + margin2.left - 220}, 200)`);
+
+    key.append("rect")
+    .attr("width", 260)
+    .attr("height", 100)
+    .attr("fill", "#dfe7f3");
+
+    key.append("text")
+    .attr("x", 20)
+    .attr("y", 35)
+    .style("font-size", "26px")
+    .style("font-family", "Georgia, serif")
+  . text("Key:");
+
+    key.append("text")
+    .attr("x", 20)
+    .attr("y", 70)
+    .style("font-size", "24px")
+    .style("font-family", "Georgia, serif")
+    .text("Bubble size = Population");
+    
+      const x = d3.scalePoint()
+        .domain(bins.map(d => d.label))
+        .range([40, width2 - 40]);
+    
+      const y = d3.scaleLinear()
+        .domain([0, 10])
+        .range([height2, 0]);
+    
+      const r = d3.scaleSqrt()
+        .domain([0, d3.max(grouped, d => d.population)])
+        .range([15, 45]);
+    
+      g2.append("g")
+        .attr("transform", `translate(0,${height2})`)
+        .call(d3.axisBottom(x));
+    
+      g2.append("g")
+        .call(d3.axisLeft(y));
+    
+      g2.selectAll("circle")
+        .data(grouped)
+        .enter()
+        .append("circle")
+        .attr("cx", d => x(d.internet_bin))
+        .attr("cy", d => y(d.avg_score))
+        .attr("r", d => r(d.population))
+        .attr("fill", "#5ec1f2")
+        .attr("opacity", 0.9)
+        .on("mouseover", (event, d) => {
+          d3.select(".tooltip")
+            .style("opacity", 1)
+            .html(`
+              ${d.internet_bin}<br>
+              Score: ${d.avg_score.toFixed(1)}
+            `);
+        })
+        .on("mousemove", (event) => {
+          d3.select(".tooltip")
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY + 10 + "px");
+        })
+        .on("mouseout", () => d3.select(".tooltip").style("opacity", 0));
+    });
+    </script>
+
 </body>
 </html>
