@@ -121,6 +121,7 @@
     <div id="mapChart" class="viz"></div>
     <div id="chart" class="viz"></div>
     <div id="bubbleChart" class="viz"></div>
+    <div id="barChart" class="viz"></div>
   </div>
 
 </div>
@@ -136,6 +137,7 @@ let geoData = null;
 const mapWidth = 900, mapHeight = 600;
 const scatterWidth = 900, scatterHeight = 600;
 const bubbleWidth = 900, bubbleHeight = 520;
+const spendWidth = 900, spendHeight = 520;
 
 const mapSvg = d3.select("#mapChart").append("svg")
   .attr("width", mapWidth)
@@ -148,6 +150,10 @@ const scatterSvg = d3.select("#chart").append("svg")
 const bubbleSvg = d3.select("#bubbleChart").append("svg")
   .attr("width", bubbleWidth)
   .attr("height", bubbleHeight);
+
+  const spendSvg = d3.select("#barChart").append("svg")
+  .attr("width", spendWidth)
+  .attr("height", spendHeight);
 
 // scales
 const projection = d3.geoMercator()
@@ -178,6 +184,9 @@ Promise.all([
     d.youth_mh_crisis_score = +d.youth_mh_crisis_score;
     d.population_millions = +d.population_millions;
     d.data_year = +d.data_year;
+    d.mh_spend_usd_per_capita = +d.mh_spend_usd_per_capita;
+    d.anxiety_pct = +d.anxiety_pct;
+    d.depression_pct = +d.depression_pct;
   });
 
   populateFilters(fullData);
@@ -219,6 +228,7 @@ function applyFilters() {
   updateMap(filtered);
   updateScatter(filtered);
   updateBubble(filtered);
+  updateSpendBar(filtered);
 }
 
 // map
@@ -490,6 +500,177 @@ function updateBubble(data) {
     .style("font-family", "Georgia, serif")
     .text("Bubble size = Population");
 }
+
+
+
+//bar graph 
+function updateSpendBar(data) {
+  spendSvg.selectAll("*").remove();
+
+  const margin = {top: 50, right: 170, bottom: 80, left: 90};
+  const width = spendWidth - margin.left - margin.right;
+  const height = spendHeight - margin.top - margin.bottom;
+
+  spendSvg.append("text")
+    .attr("x", spendWidth / 2)
+    .attr("y", 28)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .style("font-weight", "bold")
+    .text("Does government spending on mental health correlate to anxiety and depression rates?");
+
+  spendSvg.append("text")
+    .attr("x", spendWidth / 2)
+    .attr("y", spendHeight - 10)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .text("Mental Health Spend (USD per Capita)");
+
+  spendSvg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -spendHeight / 2)
+    .attr("y", 20)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .text("Anxiety and Depression Rate");
+
+  const g = spendSvg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const bins = [
+    { label: "0-80", min: 0, max: 81 },
+    { label: "81-160", min: 81, max: 161 },
+    { label: "161-240", min: 161, max: 241 },
+    { label: "241-320", min: 241, max: 321 }
+  ];
+
+  data.forEach(d => {
+    const bin = bins.find(b =>
+      d.mh_spend_usd_per_capita >= b.min &&
+      d.mh_spend_usd_per_capita < b.max
+    );
+    d.spend_bin = bin ? bin.label : null;
+  });
+
+  const grouped = bins.map(bin => {
+    const values = data.filter(d => d.spend_bin === bin.label);
+
+    return {
+      spend_bin: bin.label,
+      anxiety: d3.mean(values, d => d.anxiety_pct) || 0,
+      depression: d3.mean(values, d => d.depression_pct) || 0
+    };
+  });
+
+  const x0 = d3.scaleBand()
+    .domain(grouped.map(d => d.spend_bin))
+    .range([0, width])
+    .padding(0.3);
+
+  const x1 = d3.scaleBand()
+    .domain(["Anxiety Rate", "Depression Rate"])
+    .range([0, x0.bandwidth()])
+    .padding(0.08);
+
+  const y = d3.scaleLinear()
+    .domain([0, 10])
+    .range([height, 0]);
+
+  const color = d3.scaleOrdinal()
+    .domain(["Anxiety Rate", "Depression Rate"])
+    .range(["#ff7373", "#ffc34d"]);
+
+  g.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x0));
+
+  g.append("g")
+    .call(d3.axisLeft(y));
+
+  const groups = g.selectAll(".spend-group")
+    .data(grouped)
+    .enter()
+    .append("g")
+    .attr("transform", d => `translate(${x0(d.spend_bin)},0)`);
+
+  groups.selectAll("rect")
+    .data(d => [
+        { label: "Anxiety Rate", value: d.anxiety, anxiety: d.anxiety, depression: d.depression, bin: d.spend_bin },
+        { label: "Depression Rate", value: d.depression, anxiety: d.anxiety, depression: d.depression, bin: d.spend_bin }
+    ])
+    .enter()
+    .append("rect")
+    .attr("x", d => x1(d.label))
+    .attr("y", d => y(d.value))
+    .attr("width", x1.bandwidth())
+    .attr("height", d => height - y(d.value))
+    .attr("fill", d => color(d.label))
+    .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+        .html(`
+        <b>National Mental Health Spending: $${d.bin} per person</b><br/>
+        Anxiety Rate: ${d.anxiety.toFixed(1)}%<br/>
+        Depression Rate: ${d.depression.toFixed(1)}%
+    `);
+})
+    .on("mousemove", event => {
+      tooltip
+        .style("left", event.pageX + 10 + "px")
+        .style("top", event.pageY + 10 + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.style("opacity", 0);
+    });
+
+  const key = spendSvg.append("g")
+    .attr("transform", `translate(${spendWidth - 260}, 90)`);
+
+  key.append("rect")
+    .attr("width", 230)
+    .attr("height", 120)
+    .attr("fill", "#dfe7f3")
+    .attr("rx", 10);
+
+  key.append("text")
+    .attr("x", 15)
+    .attr("y", 28)
+    .style("font-size", "18px")
+    .style("font-family", "Georgia, serif")
+    .style("font-weight", "bold")
+    .text("Key:");
+
+  key.append("rect")
+    .attr("x", 18)
+    .attr("y", 48)
+    .attr("width", 14)
+    .attr("height", 14)
+    .attr("fill", "#ff7373");
+
+  key.append("text")
+    .attr("x", 42)
+    .attr("y", 60)
+    .style("font-size", "15px")
+    .style("font-family", "Georgia, serif")
+    .text("Anxiety Rate");
+
+  key.append("rect")
+    .attr("x", 18)
+    .attr("y", 78)
+    .attr("width", 14)
+    .attr("height", 14)
+    .attr("fill", "#ffc34d");
+
+  key.append("text")
+    .attr("x", 42)
+    .attr("y", 90)
+    .style("font-size", "15px")
+    .style("font-family", "Georgia, serif")
+    .text("Depression Rate");
+}
+
+
+
+
 </script>
 
 </body>
