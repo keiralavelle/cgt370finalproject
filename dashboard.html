@@ -773,7 +773,18 @@ spendSvg.append("text")
   .style("font-size", "12px")
   .style("font-style", "italic")
   .style("fill", "#444")
-  .text("Slight increases at higher spending levels may reflect countries responding to greater mental health needs.");
+  .text("Some mid-range level spending shows lower anxiety and depression rates, but this pattern isn't consistent across all levels.");
+
+
+  spendSvg.append("text")
+  .attr("x", spendWidth / 2)
+  .attr("y", spendHeight - 18)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Other factors influence mental health outcomes.");
+
 
 }
 
