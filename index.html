@@ -55,6 +55,13 @@
       background: #56779d;
     }
 
+    .hero-text p:last-child {
+      grid-column: 1 / -1;   
+      text-align: center;    
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
     @media (max-width: 768px) {
       .hero-text {
         grid-template-columns: 1fr;
@@ -77,6 +84,12 @@
       <p>
         By examining relationships between digital habits, healthcare resources, and crisis scores, the dashboard uncovers both expected and surprising trends. Through interactive visualizations, this dashboard invites you to investigate how mental health conditions differ by country, region, income group, and policy status. You can filter the data to compare nations, identify differences, and better understand the global landscape of mental health. Together, these insights provide a clearer picture of how societal structures and modern lifestyles influence one of the most pressing public health challenges of our time.
       </p>
+  
+      <p>
+        About the Dataset: We found Global Mental Health Crisis 2026 on Kaggle.com. It is a cross-national dataset covering 92 countries across 6 World Health Organization(WHO) regions, containing economic, policy, and digital behavior  regarding mental health. 
+
+      </p>
+
     </div>
 
     <a class="btn" href="dashboard.html">View Visualizations</a>

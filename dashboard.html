@@ -115,9 +115,6 @@
       <option value="">All Policy Status</option>
     </select>
 
-    <select id="yearFilter">
-      <option value="">All Years</option>
-    </select>
   </div>
 
   <div class="viz-area">
@@ -192,7 +189,7 @@ function populateFilters(data) {
   populateDropdown("regionFilter", [...new Set(data.map(d => d.region))]);
   populateDropdown("incomeFilter", [...new Set(data.map(d => d.income_group))]);
   populateDropdown("policyFilter", [...new Set(data.map(d => d.mh_policy_exists))]);
-  populateDropdown("yearFilter", [...new Set(data.map(d => d.data_year))]);
+  //populateDropdown("yearFilter", [...new Set(data.map(d => d.data_year))]);
 
   d3.selectAll("select").on("change", applyFilters);
 }
@@ -209,14 +206,14 @@ function applyFilters() {
   const region = d3.select("#regionFilter").property("value");
   const income = d3.select("#incomeFilter").property("value");
   const policy = d3.select("#policyFilter").property("value");
-  const year = d3.select("#yearFilter").property("value");
+  //const year = d3.select("#yearFilter").property("value");
 
   const filtered = fullData.filter(d =>
     (!country || d.country === country) &&
     (!region || d.region === region) &&
     (!income || d.income_group === income) &&
-    (!policy || d.mh_policy_exists === policy) &&
-    (!year || d.data_year == year)
+    (!policy || d.mh_policy_exists === policy) //&&
+    //(!year || d.data_year == year)
   );
 
   updateMap(filtered);
