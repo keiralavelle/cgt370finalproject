@@ -43,6 +43,9 @@
 
     .viz-area {
       padding: 20px 250px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
     }
 
     .viz {
@@ -54,23 +57,37 @@
       justify-content: center;
       font-size: 1rem;
       color: #6b7280;
+      padding: 10px;
     }
 
     .back-btn {
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        padding: 8px 14px;
-        background: #6d8db3;
-        color: white;
-        text-decoration: none;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        z-index: 1000;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      padding: 8px 14px;
+      background: #6d8db3;
+      color: white;
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      z-index: 1000;
     }
 
     .back-btn:hover {
         background: #56779d;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 12px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 2000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
   </style>
@@ -91,6 +108,7 @@
         </div>
 
         <div class="viz-area">
+          <div id="mapChart" class="viz"></div>
           <div id="chart" class="viz"></div>
           <div id="bubbleChart" class="viz" style="margin-top:20px;"></div>
         </div>
@@ -102,6 +120,77 @@
 const container = d3.select("#chart");
 const tooltip = d3.select(".tooltip");
 
+// map
+const mapWidth = 900;
+const mapHeight = 600;
+const mapMargin = { top: 30, right: 0, bottom: 0, left: 0 };
+
+const mapSvg = d3.select("#mapChart")
+  .append("svg")
+  .attr("width", mapWidth)
+  .attr("height", mapHeight + mapMargin.top);
+
+const mapG = mapSvg.append("g")
+  .attr("transform", `translate(0,${mapMargin.top})`);
+
+mapSvg.append("text")
+  .attr("x", mapWidth / 2)
+  .attr("y", 25)
+  .attr("text-anchor", "middle")
+  .style("font-size", "18px")
+  .style("font-weight", "bold")
+  .text("Does depression, anxiety, and suicide rates change from country to country?");
+
+const projection = d3.geoMercator()
+  .scale(140)
+  .translate([mapWidth / 2, (mapHeight + mapMargin.top) / 1.4]);
+
+const path = d3.geoPath().projection(projection);
+
+const colorMap = d3.scaleSequential()
+  .domain([0, 20])
+  .interpolator(t => d3.interpolateBlues(t * 0.25));
+
+Promise.all([
+  d3.json("https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson"),
+  d3.csv("Global_Mental_Health_Crisis_Index_2026.csv")
+]).then(([geo, data]) => {
+
+  const mapData = new Map();
+  data.forEach(d => mapData.set(d.country, d));
+
+  mapG.selectAll("path")
+    .data(geo.features)
+    .enter()
+    .append("path")
+    .attr("d", path)
+    .attr("fill", d => {
+      const c = mapData.get(d.properties.name);
+      return c ? colorMap(c.mh_crisis_index) : "#eee";
+    })
+    .attr("stroke", "#333")
+    .on("mouseover", (event, d) => {
+
+      const c = mapData.get(d.properties.name);
+      if (!c) return;
+
+      tooltip.style("opacity", 1)
+        .html(`
+          <b>${c.country}</b><br/>
+          Depression: ${c.depression_pct}%<br/>
+          Anxiety: ${c.anxiety_pct}%<br/>
+          Suicide Rate: ${c.suicide_rate_per100k}
+        `);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY + 10) + "px");
+    })
+    .on("mouseout", () => tooltip.style("opacity", 0));
+});
+
+// scatter plot
 const margin = {top: 40, right: 150, bottom: 60, left: 70};
 const width = 900 - margin.left - margin.right;
 const height = 600 - margin.top - margin.bottom;
@@ -304,7 +393,7 @@ svg2.append("text")
     .attr("y", 35)
     .style("font-size", "26px")
     .style("font-family", "Georgia, serif")
-  . text("Key:");
+    .text("Key:");
 
     key.append("text")
     .attr("x", 20)
