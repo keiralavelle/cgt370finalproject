@@ -135,9 +135,9 @@ let fullData = [];
 let geoData = null;
 
 const mapWidth = 900, mapHeight = 600;
-const scatterWidth = 900, scatterHeight = 600;
-const bubbleWidth = 900, bubbleHeight = 520;
-const spendWidth = 900, spendHeight = 520;
+const scatterWidth = 900, scatterHeight = 650;
+const bubbleWidth = 900, bubbleHeight = 580;
+const spendWidth = 900, spendHeight = 580;
 
 const mapSvg = d3.select("#mapChart").append("svg")
   .attr("width", mapWidth)
@@ -245,8 +245,12 @@ function updateMap(data) {
 
   const mapData = new Map(data.map(d => [d.country, d]));
 
+  const topMargin = 50;
+  const bottomMargin = 80;
+
   const mapGroup = mapSvg.append("g")
-    .attr("transform", "translate(0, 50)");
+    .attr("transform", `translate(0, ${topMargin})`);
+
 
   mapGroup.selectAll("path")
     .data(geoData.features)
@@ -274,13 +278,30 @@ function updateMap(data) {
              .style("top", event.pageY + 10 + "px");
     })
     .on("mouseout", () => tooltip.style("opacity", 0));
-}
+
+    mapSvg.append("rect")
+      .attr("x", 120)
+      .attr("y", mapHeight - 55)
+      .attr("width", 660)
+      .attr("height", 35)
+      .attr("fill", "#f3f6fb")
+      .attr("rx", 8);
+
+    mapSvg.append("text")
+      .attr("x", mapWidth / 2)
+      .attr("y", mapHeight - 33)
+      .attr("text-anchor", "middle")
+      .style("font-size", "13px")
+      .style("font-style", "italic")
+      .style("fill", "#444")
+      .text("Hover over each country to explore its depression, anxiety, and suicide rates.");
+  }
 
 // scatter
 function updateScatter(data) {
   scatterSvg.selectAll("*").remove();
 
-  const margin = {top: 50, right: 150, bottom: 60, left: 70};
+  const margin = {top: 50, right: 150, bottom: 150, left: 70};
   const width = scatterWidth - margin.left - margin.right;
   const height = scatterHeight - margin.top - margin.bottom;
 
@@ -294,7 +315,7 @@ function updateScatter(data) {
 
   scatterSvg.append("text")
     .attr("x", scatterWidth / 2)
-    .attr("y", scatterHeight - 10)
+    .attr("y", scatterHeight - 90)
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .text("Daily Social Media Usage (Hours)");
@@ -370,13 +391,39 @@ function updateScatter(data) {
       .style("font-size", "12px")
       .text(region);
   });
+
+  scatterSvg.append("rect")
+    .attr("x", 30)
+    .attr("y", scatterHeight - 70)
+    .attr("width", 900)
+    .attr("height", 60)
+    .attr("fill", "#f3f6fb")
+    .attr("rx", 8);
+
+  scatterSvg.append("text")
+    .attr("x", scatterWidth / 2)
+    .attr("y", scatterHeight - 45)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .style("font-style", "italic")
+    .style("fill", "#444")
+    .text("Insight: In some regions, higher daily social media usage is linked to a higher mental health crisis index, though the relationship is not strongly positive.");
+
+  scatterSvg.append("text")
+    .attr("x", scatterWidth / 2)
+    .attr("y", scatterHeight - 28)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .style("font-style", "italic")
+    .style("fill", "#444")
+    .text("Regional clusters suggest countries within the same area often share similar patterns and trends.");
 }
 
 // bubble
 function updateBubble(data) {
   bubbleSvg.selectAll("*").remove();
 
-  const margin = {top: 50, right: 80, bottom: 80, left: 90};
+  const margin = {top: 50, right: 80, bottom: 150, left: 90};
   const width = bubbleWidth - margin.left - margin.right;
   const height = bubbleHeight - margin.top - margin.bottom;
 
@@ -390,7 +437,7 @@ function updateBubble(data) {
 
   bubbleSvg.append("text")
     .attr("x", bubbleWidth / 2)
-    .attr("y", bubbleHeight - 10)
+    .attr("y", bubbleHeight - 100)
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .text("Internet Penetration Percentage (%)");
@@ -499,6 +546,41 @@ function updateBubble(data) {
     .style("font-size", "15px")
     .style("font-family", "Georgia, serif")
     .text("Bubble size = Population");
+
+  bubbleSvg.append("rect")
+  .attr("x", 40)
+  .attr("y", bubbleHeight - 75)
+  .attr("width", 820)
+  .attr("height", 65)
+  .attr("fill", "#f3f6fb")
+  .attr("rx", 8);
+
+bubbleSvg.append("text")
+  .attr("x", bubbleWidth / 2)
+  .attr("y", bubbleHeight - 58)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Insight: Overall, there is a slight negative relationship between internet penetration and youth mental health crisis scores.");
+
+  bubbleSvg.append("text")
+  .attr("x", bubbleWidth / 2)
+  .attr("y", bubbleHeight - 38)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Countries with higher internet penetration also tend to have larger populations.");
+
+    bubbleSvg.append("text")
+  .attr("x", bubbleWidth / 2)
+  .attr("y", bubbleHeight - 20)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Use the filters above to explore how specific countries and regions compare.");
 }
 
 
@@ -507,7 +589,7 @@ function updateBubble(data) {
 function updateSpendBar(data) {
   spendSvg.selectAll("*").remove();
 
-  const margin = {top: 50, right: 170, bottom: 80, left: 90};
+  const margin = {top: 50, right: 170, bottom: 150, left: 90};
   const width = spendWidth - margin.left - margin.right;
   const height = spendHeight - margin.top - margin.bottom;
 
@@ -521,7 +603,7 @@ function updateSpendBar(data) {
 
   spendSvg.append("text")
     .attr("x", spendWidth / 2)
-    .attr("y", spendHeight - 10)
+    .attr("y", spendHeight - 100)
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .text("Mental Health Spend (USD per Capita)");
@@ -666,10 +748,34 @@ function updateSpendBar(data) {
     .style("font-size", "15px")
     .style("font-family", "Georgia, serif")
     .text("Depression Rate");
+
+  spendSvg.append("rect")
+  .attr("x", 40)
+  .attr("y", spendHeight - 85)
+  .attr("width", 820)
+  .attr("height", 65)
+  .attr("fill", "#f3f6fb")
+  .attr("rx", 8);
+
+spendSvg.append("text")
+  .attr("x", spendWidth / 2)
+  .attr("y", spendHeight - 58)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Insight: Anxiety and depression rates remain relatively consistent across spending categories.");
+
+  spendSvg.append("text")
+  .attr("x", spendWidth / 2)
+  .attr("y", spendHeight - 38)
+  .attr("text-anchor", "middle")
+  .style("font-size", "12px")
+  .style("font-style", "italic")
+  .style("fill", "#444")
+  .text("Slight increases at higher spending levels may reflect countries responding to greater mental health needs.");
+
 }
-
-
-
 
 </script>
 
